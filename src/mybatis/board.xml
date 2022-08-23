@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- user.xml 얘가 Mapper -->
+<!-- 설정이 들어가야함 -->
+<!-- mapper 안에 sql을 넣어주면 됨 -->
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="Board">
+	
+		<select id="getCount" resultType="int">
+			select count(*) from board
+		</select>
+		
+		<select id="getArticles" parameterType="java.util.Map" resultType="board.BoardDataBean">
+			select num, writer, email, subject,passwd,
+			reg_date, ref, re_step, re_level, content,ip, readcount, r
+			from (select num, writer, email, subject, passwd, reg_date, ref, re_step
+			,re_level, content, ip, readcount, rownum r from
+			(select num,writer,email,subject,passwd,reg_date,ref,re_step,re_level
+			,content,ip, readcount from board order by ref desc, re_step asc)
+			order by ref desc, re_step asc ) where r &gt;= #{start} and r &lt;= #{end}
+		</select>
+		
+		<select id="maxNum" resultType="int">
+			select max(num) from board
+		</select>
+		<update id="updateReply">
+			update board set re_step=re_step+1 where ref=#{ref} and re_step &gt; #{re_step}
+		</update>
+		<insert id="insertArticle" parameterType="board.BoardDataBean">
+			insert into board( num, writer, email, subject, passwd,
+				reg_date, ref, re_step, re_level, content, ip )
+				values( board_seq.NEXTVAL, #{writer}, #{email, jdbcType=VARCHAR}, #{subject},
+						#{passwd}, #{reg_date}, #{ref}, #{re_step}, #{re_level}, #{content}, #{ip} )
+		</insert>
+		
+		<select id="getArticle" parameterType="int" resultType="board.BoardDataBean">
+			select * from board where num=#{num}
+		</select>
+		<update id="addCount" parameterType="int">
+			update board set readcount = readcount+1 where num=#{num}
+		</update>
+		
+		<update id="modifyArticle" parameterType="board.BoardDataBean">
+			update board set email=#{email, jdbcType=VARCHAR}, subject=#{subject}, content=#{content}, passwd=#{passwd} where num=#{num}
+		</update>
+		
+		<select id="checkReply" parameterType="board.BoardDataBean" resultType="int">
+			select count(*) from board where ref=#{ref} and re_step=#{re_step}+1 and re_level &gt; #{re_level}
+		</select>
+		<update id="delArticle" parameterType="int">
+			update board set subject='삭제된 글 입니다.', readcount=-1 where num=#{num}
+		</update>
+		<update id="deleteReply" parameterType="board.BoardDataBean">
+			update board set re_step=re_step-1 where ref=#{ref} and re_step &gt; #{re_level}
+		</update>
+		<delete id="deleteArticle" parameterType="int">
+			delete from board where num=#{num}
+		</delete>
+		
+	</mapper>
